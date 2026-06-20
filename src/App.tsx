@@ -10,10 +10,7 @@ import ChapterReader from "./components/ChapterReader";
 import EmptyState from "./components/EmptyState";
 import { useTTS } from "./hooks/useTTS";
 import { useVoices } from "./hooks/useVoices";
-
-function useIsMobile() {
-  return window.innerWidth < 768;
-}
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 export default function App() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -31,6 +28,16 @@ export default function App() {
   const [selectedVoice, setSelectedVoice] =
     useState<SpeechSynthesisVoice | null>(null);
   const isMobile = useIsMobile();
+
+  useKeyboardShortcuts({
+    onTogglePlay: togglePlay,
+    onPrev: () => skipChapter("prev"),
+    onNext: () => skipChapter("next"),
+  });
+
+  function useIsMobile() {
+    return window.innerWidth < 768;
+  }
 
   const currentChapter =
     chapters.find((c) => c.id === player.currentChapterId) ?? null;

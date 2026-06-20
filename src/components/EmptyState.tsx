@@ -15,6 +15,23 @@ export default function EmptyState() {
           along.
         </p>
       </div>
+      <div className="flex items-center gap-3 mt-2">
+        {[
+          { key: "Space", label: "Play / Pause" },
+          { key: "←", label: "Prev" },
+          { key: "→", label: "Next" },
+        ].map(({ key, label }) => (
+          <div
+            key={key}
+            className="flex items-center gap-1.5 text-xs text-gray-500"
+          >
+            <kbd className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-400 font-mono text-xs">
+              {key}
+            </kbd>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
