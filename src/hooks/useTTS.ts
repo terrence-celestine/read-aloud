@@ -18,7 +18,6 @@ export function useTTS(
 
     function speak() {
       window.speechSynthesis.cancel();
-      window.speechSynthesis.resume();
 
       const utterance = new SpeechSynthesisUtterance(text!);
       utterance.rate = rate;

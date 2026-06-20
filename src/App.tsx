@@ -63,11 +63,18 @@ export default function App() {
   }
 
   function selectChapter(id: string) {
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
     setCharIndex(0);
     setPlayer({ currentChapterId: id, isPlaying: true, progress: 0 });
   }
 
   function togglePlay() {
+    if (!player.isPlaying) {
+      window.speechSynthesis.resume();
+    } else {
+      window.speechSynthesis.pause();
+    }
     setPlayer((p) => ({ ...p, isPlaying: !p.isPlaying }));
   }
 
