@@ -130,7 +130,7 @@ export default function App() {
           />
         )}
 
-        <main className="flex-1 overflow-hidden">
+        <main className={`flex-1 overflow-hidden ${isMobile ? "pb-24" : ""}`}>
           {!isParsing && chapters.length === 0 && (
             <div className="h-full flex items-center justify-center px-6">
               <UploadZone
@@ -172,7 +172,11 @@ export default function App() {
       {!isMobile && <Player {...playerProps} />}
 
       {/* Mobile player */}
-      {isMobile && <MobilePlayer {...playerProps} />}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 z-30">
+          <MobilePlayer {...playerProps} />
+        </div>
+      )}
 
       {/* Bottom sheet */}
       <BottomSheet
