@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import type { Chapter } from "../types";
 
@@ -17,7 +17,9 @@ export default function BottomSheet({
   onSelect,
   onClose,
 }: Props) {
-  // Lock body scroll when open
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef<number | null>(null);
+
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
@@ -25,18 +27,29 @@ export default function BottomSheet({
     };
   }, [isOpen]);
 
+  function handleTouchStart(e: React.TouchEvent) {
+    startYRef.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (startYRef.current === null) return;
+    const delta = e.changedTouches[0].clientY - startYRef.current;
+    if (delta > 60) onClose(); // swiped down more than 60px
+    startYRef.current = null;
+  }
+
   return (
     <>
-      {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
-
-      {/* Sheet */}
       <div
+        ref={sheetRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-900 rounded-t-2xl transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
@@ -73,12 +86,12 @@ export default function BottomSheet({
                     : "text-gray-300"
                 }`}
               >
-                <span className="text-gray-600 text-xs w-5 shrink-0">
+                <span className="text-gray-600 text-xs w-5 flex-shrink-0">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="truncate">{chapter.title}</span>
                 {chapter.id === currentChapterId && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
                 )}
               </button>
             </li>
