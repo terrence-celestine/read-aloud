@@ -73,12 +73,14 @@ export default function App() {
     if (!player.isPlaying) {
       window.speechSynthesis.resume();
     } else {
-      window.speechSynthesis.pause();
+      window.speechSynthesis.cancel();
     }
     setPlayer((p) => ({ ...p, isPlaying: !p.isPlaying }));
   }
 
   function skipChapter(direction: "prev" | "next") {
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
     const ids = chapters.map((c) => c.id);
     const idx = ids.indexOf(player.currentChapterId ?? "");
     const next = direction === "next" ? idx + 1 : idx - 1;
