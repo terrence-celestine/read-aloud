@@ -30,7 +30,7 @@ export default function Sidebar({
         {chapters.length > 0 && (
           <button
             onClick={onNewFile}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors shrink-0"
           >
             <FolderOpen size={13} />
             Open
