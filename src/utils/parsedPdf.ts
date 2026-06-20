@@ -117,16 +117,6 @@ export async function extractFromPdf(
           }
           grouped[after].count++;
         });
-
-        console.group(
-          `⚠️ Null bytes in: "${resolved[i].title}" (${nullMatches.length} total)`,
-        );
-        Object.entries(grouped).forEach(([after, { count, example }]) => {
-          console.log(
-            `  \\u0000 + "${after}" — ${count}x — example: ${JSON.stringify(example)}`,
-          );
-        });
-        console.groupEnd();
       }
 
       // Fix ligatures after logging and push
