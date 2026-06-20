@@ -59,79 +59,92 @@ interface OutlineItem {
 }
 
 export async function extractFromPdf(
-  file: File,
-): Promise<{ title: string; content: string }[]> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-  const outline: OutlineItem[] = await pdf.getOutline();
-
-  if (outline && outline.length > 0) {
-    const resolved: { title: string; page: number }[] = [];
-
-    for (const item of outline) {
-      try {
-        let pageIndex: number | null = null;
-
-        if (typeof item.dest === "string") {
-          const dest = await pdf.getDestination(item.dest);
-          if (dest) {
-            const ref = dest[0];
-            pageIndex = await pdf.getPageIndex(ref);
-          }
-        } else if (Array.isArray(item.dest) && item.dest[0]) {
-          pageIndex = await pdf.getPageIndex(item.dest[0]);
-        }
-
-        if (pageIndex !== null) {
-          resolved.push({ title: item.title, page: pageIndex + 1 });
-        }
-      } catch {
-        // Skip unresolvable outline items
+    file: File,
+  ): Promise<{ title: string | null; chapters: { title: string; content: string }[] }> {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  
+    // Read PDF metadata
+    let bookTitle: string | null = null;
+    try {
+      const meta = await pdf.getMetadata();
+      const info = meta?.info as Record<string, any>;
+      if (info?.Title && info.Title.trim()) {
+        bookTitle = info.Title.trim();
       }
+    } catch {
+      // Metadata unavailable
     }
-
-    const chapters: { title: string; content: string }[] = [];
-
-    for (let i = 0; i < resolved.length; i++) {
-      const start = resolved[i].page;
-      const end = resolved[i + 1]?.page ?? pdf.numPages;
-
-      const pages: string[] = [];
-      for (let p = start; p <= end; p++) {
-        pages.push(await getPageText(pdf, p));
-      }
-
-      const raw = pages.join(" ").trim();
-
-      // Log null bytes against raw text before fixing
-      const nullMatches = [...raw.matchAll(/\u0000\w*/g)];
-      if (nullMatches.length > 0) {
-        const grouped: Record<string, { count: number; example: string }> = {};
-        nullMatches.forEach((match) => {
-          const after = match[0].slice(1);
-          const idx = match.index ?? 0;
-          const context = raw.slice(Math.max(0, idx - 10), idx + 15);
-          if (!grouped[after]) {
-            grouped[after] = { count: 0, example: context };
+  
+    const outline: OutlineItem[] = await pdf.getOutline();
+  
+    if (outline && outline.length > 0) {
+      const resolved: { title: string; page: number }[] = [];
+  
+      for (const item of outline) {
+        try {
+          let pageIndex: number | null = null;
+  
+          if (typeof item.dest === "string") {
+            const dest = await pdf.getDestination(item.dest);
+            if (dest) {
+              const ref = dest[0];
+              pageIndex = await pdf.getPageIndex(ref);
+            }
+          } else if (Array.isArray(item.dest) && item.dest[0]) {
+            pageIndex = await pdf.getPageIndex(item.dest[0]);
           }
-          grouped[after].count++;
-        });
+  
+          if (pageIndex !== null) {
+            resolved.push({ title: item.title, page: pageIndex + 1 });
+          }
+        } catch {
+          // Skip unresolvable outline items
+        }
       }
-
-      // Fix ligatures after logging and push
-      const content = fixLigatures(raw);
-      chapters.push({ title: resolved[i].title, content });
+  
+      const chapters: { title: string; content: string }[] = [];
+  
+      for (let i = 0; i < resolved.length; i++) {
+        const start = resolved[i].page;
+        const end = resolved[i + 1]?.page ?? pdf.numPages;
+  
+        const pages: string[] = [];
+        for (let p = start; p <= end; p++) {
+          pages.push(await getPageText(pdf, p));
+        }
+  
+        const raw = pages.join(" ").trim();
+  
+        const nullMatches = [...raw.matchAll(/\u0000\w*/g)];
+        if (nullMatches.length > 0) {
+          const grouped: Record<string, { count: number; example: string }> = {};
+          nullMatches.forEach((match) => {
+            const after = match[0].slice(1);
+            const idx = match.index ?? 0;
+            const context = raw.slice(Math.max(0, idx - 10), idx + 15);
+            if (!grouped[after]) grouped[after] = { count: 0, example: context };
+            grouped[after].count++;
+          });
+          console.group(`⚠️ Null bytes in: "${resolved[i].title}" (${nullMatches.length} total)`);
+          Object.entries(grouped).forEach(([after, { count, example }]) => {
+            console.log(`  \\u0000 + "${after}" — ${count}x — example: ${JSON.stringify(example)}`);
+          });
+          console.groupEnd();
+        }
+  
+        const content = fixLigatures(raw);
+        chapters.push({ title: resolved[i].title, content });
+      }
+  
+      return { title: bookTitle, chapters };
     }
-
-    return chapters;
+  
+    const pages: string[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const raw = await getPageText(pdf, i);
+      pages.push(fixLigatures(raw));
+    }
+  
+    return { title: bookTitle, chapters: [{ title: "Full Document", content: pages.join(" ").trim() }] };
   }
-
-  const pages: string[] = [];
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const raw = await getPageText(pdf, i);
-    pages.push(fixLigatures(raw));
-  }
-
-  return [{ title: "Full Document", content: pages.join(" ").trim() }];
-}

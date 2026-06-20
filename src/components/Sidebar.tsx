@@ -4,6 +4,7 @@ import { FolderOpen } from "lucide-react";
 interface Props {
   chapters: Chapter[];
   currentChapterId: string | null;
+  bookTitle: string | null;
   onSelect: (id: string) => void;
   onNewFile: () => void;
 }
@@ -11,20 +12,25 @@ interface Props {
 export default function Sidebar({
   chapters,
   currentChapterId,
+  bookTitle,
   onSelect,
   onNewFile,
 }: Props) {
   return (
     <aside className="w-72 bg-gray-900 border-r border-gray-800 flex flex-col">
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight">ReadAloud</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Chapters</p>
+      <div className="p-4 border-b border-gray-800 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-sm font-bold tracking-tight truncate">
+            {bookTitle ?? "ReadAloud"}
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {bookTitle ? "ReadAloud" : "Drop a PDF to begin"}
+          </p>
         </div>
         {chapters.length > 0 && (
           <button
             onClick={onNewFile}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
           >
             <FolderOpen size={13} />
             Open

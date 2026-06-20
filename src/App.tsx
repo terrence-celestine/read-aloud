@@ -23,6 +23,7 @@ export default function App() {
   const [rate, setRate] = useState(1);
   const [charIndex, setCharIndex] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [bookTitle, setBookTitle] = useState<string | null>(null);
 
   const voices = useVoices();
   const [selectedVoice, setSelectedVoice] =
@@ -42,8 +43,9 @@ export default function App() {
   const currentChapter =
     chapters.find((c) => c.id === player.currentChapterId) ?? null;
 
-  function handleUpload(parsed: Chapter[]) {
+  function handleUpload(parsed: Chapter[], title: string | null) {
     setChapters(parsed);
+    setBookTitle(title);
     setIsParsing(false);
     setPlayer({
       currentChapterId: parsed[0]?.id ?? null,
@@ -55,6 +57,7 @@ export default function App() {
   function handleNewFile() {
     window.speechSynthesis.cancel();
     setChapters([]);
+    setBookTitle(null);
     setPlayer({ currentChapterId: null, isPlaying: false, progress: 0 });
     setCharIndex(0);
   }
@@ -123,6 +126,7 @@ export default function App() {
             currentChapterId={player.currentChapterId}
             onSelect={selectChapter}
             onNewFile={handleNewFile}
+            bookTitle={bookTitle}
           />
         )}
 
