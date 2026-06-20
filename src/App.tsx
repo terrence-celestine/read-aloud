@@ -12,6 +12,11 @@ import { useTTS } from "./hooks/useTTS";
 import { useVoices } from "./hooks/useVoices";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
+// Outside component — not a hook, just a utility
+function isMobile() {
+  return window.innerWidth < 768;
+}
+
 export default function App() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isParsing, setIsParsing] = useState(false);
@@ -28,17 +33,7 @@ export default function App() {
   const voices = useVoices();
   const [selectedVoice, setSelectedVoice] =
     useState<SpeechSynthesisVoice | null>(null);
-  const isMobile = useIsMobile();
-
-  useKeyboardShortcuts({
-    onTogglePlay: togglePlay,
-    onPrev: () => skipChapter("prev"),
-    onNext: () => skipChapter("next"),
-  });
-
-  function useIsMobile() {
-    return window.innerWidth < 768;
-  }
+  const mobile = isMobile();
 
   const currentChapter =
     chapters.find((c) => c.id === player.currentChapterId) ?? null;
@@ -64,9 +59,19 @@ export default function App() {
 
   function selectChapter(id: string) {
     window.speechSynthesis.cancel();
-    window.speechSynthesis.resume();
     setCharIndex(0);
-    setPlayer({ currentChapterId: id, isPlaying: true, progress: 0 });
+    setPlayer({ currentChapterId: id, isPlaying: false, progress: 0 });
+  }
+
+  function skipChapter(direction: "prev" | "next") {
+    window.speechSynthesis.cancel();
+    const ids = chapters.map((c) => c.id);
+    const idx = ids.indexOf(player.currentChapterId ?? "");
+    const next = direction === "next" ? idx + 1 : idx - 1;
+    if (next >= 0 && next < ids.length) {
+      setCharIndex(0);
+      setPlayer({ currentChapterId: ids[next], isPlaying: false, progress: 0 });
+    }
   }
 
   function togglePlay() {
@@ -78,17 +83,12 @@ export default function App() {
     setPlayer((p) => ({ ...p, isPlaying: !p.isPlaying }));
   }
 
-  function skipChapter(direction: "prev" | "next") {
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.resume();
-    const ids = chapters.map((c) => c.id);
-    const idx = ids.indexOf(player.currentChapterId ?? "");
-    const next = direction === "next" ? idx + 1 : idx - 1;
-    if (next >= 0 && next < ids.length) {
-      setCharIndex(0);
-      setPlayer({ currentChapterId: ids[next], isPlaying: true, progress: 0 });
-    }
-  }
+  // Keyboard shortcuts — after all handlers are defined
+  useKeyboardShortcuts({
+    onTogglePlay: togglePlay,
+    onPrev: () => skipChapter("prev"),
+    onNext: () => skipChapter("next"),
+  });
 
   useTTS(
     currentChapter?.content ?? null,
@@ -116,8 +116,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-950 text-white">
-      {/* Mobile nav */}
-      {isMobile && (
+      {mobile && (
         <MobileNav
           title={
             currentChapter?.title ?? (chapters.length > 0 ? "ReadAloud" : null)
@@ -128,8 +127,7 @@ export default function App() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Desktop sidebar */}
-        {!isMobile && (
+        {!mobile && (
           <Sidebar
             chapters={chapters}
             currentChapterId={player.currentChapterId}
@@ -139,7 +137,7 @@ export default function App() {
           />
         )}
 
-        <main className={`flex-1 overflow-hidden ${isMobile ? "pb-24" : ""}`}>
+        <main className={`flex-1 overflow-hidden ${mobile ? "pb-24" : ""}`}>
           {!isParsing && chapters.length === 0 && (
             <div className="h-full flex items-center justify-center px-6">
               <UploadZone
@@ -177,17 +175,14 @@ export default function App() {
         </main>
       </div>
 
-      {/* Desktop player */}
-      {!isMobile && <Player {...playerProps} />}
+      {!mobile && <Player {...playerProps} />}
 
-      {/* Mobile player */}
-      {isMobile && (
+      {mobile && (
         <div className="fixed bottom-0 left-0 right-0 z-30">
           <MobilePlayer {...playerProps} />
         </div>
       )}
 
-      {/* Bottom sheet */}
       <BottomSheet
         chapters={chapters}
         currentChapterId={player.currentChapterId}
