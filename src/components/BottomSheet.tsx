@@ -86,12 +86,12 @@ export default function BottomSheet({
                     : "text-gray-300"
                 }`}
               >
-                <span className="text-gray-600 text-xs w-5 flex-shrink-0">
+                <span className="text-gray-600 text-xs w-5 shrink-0">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="truncate">{chapter.title}</span>
                 {chapter.id === currentChapterId && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
                 )}
               </button>
             </li>
